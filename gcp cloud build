@@ -1,0 +1,40 @@
+PROJECT_ID=-------
+REPO_REGION="us"
+REPO=Sahilyadavcs23/gcp-cloud-build
+REGION="us-central1"
+for ENV in stg prd; do
+  gcloud iam service-accounts create run-${ENV}-sa \
+    --display-name="Cloud Run runtime SA (${ENV})" \
+    --project ${--------}
+done
+
+gcloud artifacts repositories create ${REPO} \
+  --repository-format=docker \
+  --location=${Sahilyadavcs23/gcp-cloud-build} \
+  --project ${------}
+
+PROJECT_NUMBER=$(gcloud projects describe ${---------} --format="value(------)")
+CB_SA="${---------}@cloudbuild.gserviceaccount.com"
+
+gcloud artifacts repositories add-iam-policy-binding ${REPO} \
+  --location=${Sahilyadavcs23/gcp-cloud-build} \
+  --member="serviceAccount:${CB_SA}" \
+  --role="roles/artifactregistry.writer" \
+  --project ${--------}
+
+gcloud projects add-iam-policy-binding ${PROJECT_ID} \
+  --member="serviceAccount:${CB_SA}" \
+  --role="roles/run.admin"
+
+for ENV in stg prd; do
+  gcloud iam service-accounts add-iam-policy-binding run-${ENV}-sa@${PROJECT_ID}.iam.gserviceaccount.com \
+    --member="serviceAccount:${CB_SA}" \
+    --role="roles/iam.serviceAccountUser" \
+    --project ${PROJECT_ID}
+done
+
+for ENV in stg prd; do
+  gcloud projects add-iam-policy-binding ${PROJECT_ID} \
+    --member="serviceAccount:run-${ENV}-sa@${PROJECT_ID}.iam.gserviceaccount.com" \
+    --role="roles/secretmanager.secretAccessor"
+done
